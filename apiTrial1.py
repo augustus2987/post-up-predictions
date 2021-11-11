@@ -30,18 +30,32 @@ class NBA_Format:
 
             for i, game in enumerate(sched):   
                 if (i+1) < game_num:
-                    to_return.append(game.dataframe["boxscore_index"])
+                    #to_return.append(game.dataframe["boxscore_index"])
+                    to_return.append(game.dataframe['boxscore_index'][0])
                 else:
                     break
         else:
 
             for i, game in enumerate((sched)):
                 if (i+1) < game_num and (i+1) >= game_num - games_before:
-                    to_return.append(game.dataframe.boxscore_index)
+                    to_return.append(game.dataframe['boxscore_index'][0])
+
+        return to_return
+
+    def get_game_data(self, boxscores_lst):
+
+        to_return = []
+
+        for boxscore in boxscores_lst:
+            to_return.append( Boxscore(str(boxscore)).dataframe )
 
         return to_return
 
 
 n = NBA_Format()
 s = n.get_team_schedule()
-print(n.format_schedule(s, 5))
+res = n.format_schedule(s, 5)
+data= n.get_game_data(res)
+
+for d in data:
+    print(d)
