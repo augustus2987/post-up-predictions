@@ -1,6 +1,8 @@
-from sportsreference.nba.teams import Teams
+# from sportsreference.nba.teams import Teams
 from sportsreference.nba.schedule import Schedule
 from sportsreference.nba.boxscore import Boxscore
+import pandas as pd
+import numpy as np
 
 # schle202edu0 = Schedule('DEN', year='2020')
 
@@ -10,52 +12,86 @@ from sportsreference.nba.boxscore import Boxscore
 #     print(game.dataframe)
 
 
-
-class NBA_Format:
-    def __init__(self, year=2020):
+# Class for formatting NBA DATA 
+# Input1: team 1 name string abbreviation
+# Input2: team 2 name string abbreviation
+# Input3: season year default 2020
+class NBA_Data:
+    def __init__(self, team1, team2, year=2020, ):
         self.year = year 
+        self.team1 = team1
+        self.team2 = team2
+        # self.team1_schedule = None
+        # self.team2_schedule = None
+        self.features_names = ['away_defensive_rebound_percentage', 'away_effective_field_goal_percentage', 'away_offensive_rebound_percentage', 'away_offensive_rating',
+        'home_defensive_rebound_percentage', 'home_effective_field_goal_percentage', 'home_offensive_rebound_percentage', 'home_offensive_rating']
 
+    ### DEPRECATED ###
+    # Return the schedule for a team for the given year. 
+    # Input1: Team name string abbreviation
     def get_team_schedule(self, team='DEN'):
         try:
-            return Schedule('DEN', year=str(self.year))
+            return Schedule(team, year=str(self.year))
         except:
             print('Error')
             return -1
 
-    def format_schedule(self, sched, game_num, games_before='all'):
 
-        to_return = []
+    # Return the boxscore nubmer (uid) for each game in specified range
+    # Input1 teamname string abbreviation 
+    # Input2 last game number in season to include
+    # Input3 number of games to include in output (default is all games of a season)
+    def get_boxscores(self, team, game_num, games_before='all'):
+        boxscore_indicies = [] 
 
-        if(games_before == 'all'):
+        # get schedule
+        try:
+            schedule = Schedule(team, year=str(self.year))
+        except:
+            print('Error')
+            return -1
 
-            for i, game in enumerate(sched):   
+        # get boxscores from games in schedule.
+        if(games_before == 'all'): # whole season
+            for i, game in enumerate(schedule):   
                 if (i+1) < game_num:
                     #to_return.append(game.dataframe["boxscore_index"])
-                    to_return.append(game.dataframe['boxscore_index'][0])
+                    boxscore_indicies.append(game.dataframe['boxscore_index'][0])
                 else:
                     break
         else:
-
-            for i, game in enumerate((sched)):
+            for i, game in enumerate(schedule):
                 if (i+1) < game_num and (i+1) >= game_num - games_before:
-                    to_return.append(game.dataframe['boxscore_index'][0])
+                    boxscore_indicies.append(game.dataframe['boxscore_index'][0])
 
-        return to_return
+        return boxscore_indicies
 
+    # Take a list of boxscore indexes of games and output the stats from each game. 
+    # Input1: list of boxscore indexes
+    # output a list of games (each of type pandas dataframe)
     def get_game_data(self, boxscores_lst):
 
         to_return = []
 
         for boxscore in boxscores_lst:
-            to_return.append( Boxscore(str(boxscore)).dataframe )
-
+            gamedata = Boxscore(str(boxscore)).dataframe
+            to_return.append(gamedata.loc[:,self.features_names].values) # turn into nparray
         return to_return
 
 
-n = NBA_Format()
-s = n.get_team_schedule()
-res = n.format_schedule(s, 5)
-data= n.get_game_data(res)
+nba = NBA_Data('DEN', 'LAC', 2020)
+res = nba.get_boxscores(nba.team1, 2, 'all')
+data= nba.get_game_data(res)
 
-for d in data:
-    print(d)
+print(nba.features_names)
+print(data)
+
+
+
+# print(type(res)) # list of game indexes 
+# print(type(data)) # list of game dataframes
+# print(type(data[0])) # dataframe 
+# print(type(data[0]['away_assist_percentage'])) # pandas series
+
+# for d in data[0]:
+#     print(d)
