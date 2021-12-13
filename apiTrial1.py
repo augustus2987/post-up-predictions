@@ -251,9 +251,6 @@ class NBA_Data:
 
         return np.subtract(team1_data_final, team2_data_final)
 
-    def average_data(self):
-
-        pass
 
 
 
