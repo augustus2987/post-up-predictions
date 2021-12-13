@@ -30,10 +30,6 @@ class NBA_Data:
         self.team2_schedule = [] # list of boxscore indices
         self.team2_data = []
 
-        self.features_names = ['away_defensive_rebound_percentage', 'away_effective_field_goal_percentage', 'away_offensive_rebound_percentage', 'away_offensive_rating',
-        'home_defensive_rebound_percentage', 'home_effective_field_goal_percentage', 'home_offensive_rebound_percentage', 'home_offensive_rating']
-        self.home_features  = ['home_defensive_rebound_percentage']
-
         self.features_names = [
             'assist_percentage',
             'assists',	
@@ -75,6 +71,10 @@ class NBA_Data:
         self.away_feature_names = ['away_' + stat for stat in self.features_names]
 
 
+        # do the things
+        self.get_final_data(1)
+
+
     # Set the schedule for the teams.
     def get_team_schedules(self):
         try:
@@ -84,9 +84,13 @@ class NBA_Data:
             print('Error')
             return -1
         
-        for game in team1_sch:
+        for i, game in enumerate(team1_sch):
             self.team1_schedule.append(game.dataframe['boxscore_index'][0])
-        for game in team2_sch:
+            if i > 10: # test
+                break
+        for i, game in enumerate(team2_sch):
+            if i > 10: # test
+                break
             self.team2_schedule.append(game.dataframe['boxscore_index'][0])
 
 
@@ -143,13 +147,13 @@ class NBA_Data:
 
         for game in team_data:
 
-            if game['winning_abbr'] == team_name:
-                if game['winner'] == 'Home':
+            if game.iloc[0]['winning_abbr'] == team_name:
+                if game.iloc[0]['winner'] == 'Home':
                     home_games.append(game)
                 else:
                     away_games.append(game)
             else: #game['losing_abbr'] == team_name
-                if game['winner'] == 'Home':
+                if game.iloc[0]['winner'] == 'Home':
                     away_games.append(game)
                 else:
                     home_games.append(game)
@@ -160,31 +164,114 @@ class NBA_Data:
     # formats all data
     #def get_team_data(self, location, games):
 
-    def get_final_data(self):
+    def get_final_data(self, home_team):
 
         self.get_team_schedules()
         self.get_game_data()
 
-        team1_home_data, team2_away_data = self.split_games(self.team1_data, self.team1)
+        team1_home_data, team1_away_data = self.split_games(self.team1_data, self.team1)
         team2_home_data, team2_away_data = self.split_games(self.team2_data, self.team2)
+
+        print("TEST TEST TEST")
+        print(type(team1_home_data[0]))
+        print(team1_home_data)
 
         #team1_home_data = team1_home_data[stat for stat in self.home_features_names]
 
+        team1_data_final = []
+        team2_data_final = []
 
+        if home_team == 1: # team 1 is at home
+
+            team1_data = team1_home_data
+            team2_data = team2_away_data
+
+            # format data 
+            for game in team1_data:
+
+                game_stats = []
+
+                for stat_name in self.home_feature_names:
+                    
+                    #game.drop(stat_name, axis=1, inplace=True)
+                    game_stats.append(game.iloc[0][stat_name])
+                
+                team1_data_final.append(np.asarray(game_stats))
+
+            for game in team2_data:
+
+                game_stats = []
+
+                for stat_name in self.away_feature_names:
+
+                    #game.drop(stat_name, axis=1, inplace=True)
+                    game_stats.append(game.iloc[0][stat_name])
+                    
+                
+                team2_data_final.append(np.asarray(game_stats))
+
+        else: # team 2 is at home
+
+            team1_data = team1_away_data
+            team2_data = team2_home_data
+
+            # format data
+            for game in team2_data:
+
+                game_stats = []
+
+                for stat_name in self.home_feature_names:
+                    
+                    #game.drop(stat_name, axis=1, inplace=True)
+                    game_stats.append(game.iloc[0][stat_name])
+                
+                team2_data_final.append(np.asarray(game_stats))
+
+            for game in team1_data:
+
+                game_stats = []
+
+                for stat_name in self.away_feature_names:
+                    
+                    #game.drop(stat_name, axis=1, inplace=True)
+                    game_stats.append(game.iloc[0][stat_name])
+                
+                team1_data_final.append(np.asarray(game_stats))
+
+        print("TEST LAST")
+        print(team1_data_final)
+        print(team2_data_final)
+
+        # team1_data_final = np.average(team1_data_final, axis=1)
+        # team2_data_final = np.average(team2_data_final, axis=1)
+
+        print("AVERAGED DATA")
+        print(team1_data_final)
+        print(team2_data_final)
+
+        return np.subtract(team1_data_final, team2_data_final)
+
+    def average_data(self):
+
+        pass
+
+
+
+data = NBA_Data('DEN', 'MIA')
 
         
 
-s = Schedule('DEN', '2019')
-bs = []
-gd = []
-for game in s:
-    bs.append(game.dataframe['boxscore_index'][0])
-print(bs)
-for i, boxscore in enumerate(bs):
-    gamedata = Boxscore(str(boxscore)).dataframe
-    gd.append(gamedata.values)
-    print(i)
-    print(gamedata)
+#s = Schedule('DEN', '2019')
+#bs = []
+#gd = []
+#for game in s:
+#    bs.append(game.dataframe['boxscore_index'][0])
+#print(bs)
+#for i, boxscore in enumerate(bs):
+#    gamedata = Boxscore(str(boxscore)).dataframe
+#    gd.append(gamedata.values)
+#    print(i)
+#    print(gamedata)
 # print(Boxscore('201810170LAC').dataframe)
 # nbad = NBA_Data('DEN', 'LAC', 2019)
 # nbad.get_team_schedules()
